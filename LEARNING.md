@@ -45,3 +45,56 @@ The first run, LLM chat failed with `ReadTimeout`, but a second run passed.
 Reason: Ollama's first request must load the 2 GB model into memory, which took
 longer than 30 s. Fix: a separate, longer `LLM_TIMEOUT = 120` in `config.py`
 (web APIs keep the short 30 s timeout).
+
+---
+
+## Step 1: Currency tool
+
+### What we built
+| File | Purpose |
+|---|---|
+| `tools/currency.py` | `get_exchange_rate(from, to)` → live rate from Frankfurter |
+| `tests/test_currency.py` | 14 tests (13 mocked + 1 live) |
+| `pytest.ini` | pytest settings + the `live` marker |
+
+```python
+get_exchange_rate("usd", "jpy")
+# {'from': 'USD', 'to': 'JPY', 'rate': 159.97, 'date': '2026-11-19',
+#  'source': 'Frankfurter (ECB)', 'as_of': '2026-11-19T17:50:53+00:00'}
+get_exchange_rate("US", "JPY")
+# {'error': "'US' is not a valid currency code. Use 3 letters, e.g. USD, EUR, JPY."}
+```
+
+Run: `.\.venv\Scripts\python.exe -m pytest` (offline: add `-m "not live"`).
+
+### Key concepts (simple words)
+
+- **Tool** — a normal Python function the agent can call to get facts the LLM
+  doesn't know (the LLM's knowledge is frozen; today's rate is not in it).
+
+- **Never crash, return a friendly error** — on failure we return
+  `{"error": "..."}` instead of raising. *Why:* in Step 4 the agent hands this
+  text to the LLM, which can then tell the user "that code doesn't exist"
+  instead of the whole program dying.
+
+- **Validate input early** — `" usd"` → `"USD"`, and `"US"` is rejected
+  *before* calling the API. *Why:* saves a slow network call and gives a clearer
+  message.
+
+- **`date` vs `as_of`** — `date` = day the bank published the rate;
+  `as_of` = moment *we* fetched it. *Why:* live data goes stale; Step 7's cache
+  uses `as_of` to know when to refresh.
+
+- **Pydantic model** — describes the correct answer shape (e.g. `rate > 0`).
+  If the API ever sends something weird, validation fails and we return a
+  friendly error instead of passing bad data on.
+
+- **Mocking in tests** — replace the real `requests.get` with a fake that
+  returns what we choose (a good reply, a 404, a timeout…).
+  *Why:* tests become fast, work offline, and give the same result every time,
+  even though real rates change daily. One `live` test still checks the real API.
+
+### Lesson learned: check the real API first
+We called Frankfurter by hand before coding: unknown codes give **404**, and
+`USD→USD` gives **422 "bad currency pair"**. So we handle same-currency
+ourselves (rate 1.0, no API call) instead of guessing.
