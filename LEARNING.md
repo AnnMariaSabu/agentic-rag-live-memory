@@ -140,3 +140,54 @@ get_weather("Atlantisxyz") → error: "City 'Atlantisxyz' not found. Check the s
 ### Lesson learned: look at the real reply first
 Calling the API by hand showed that "not found" looks like success (200 + no
 `results`). Without checking, we would have guessed a 404 and missed the case.
+
+---
+
+## Step 3: Docs tool
+
+### What we built
+| File | Purpose |
+|---|---|
+| `data/documents/` | 8 company documents copied from Project 1 (hr, it, travel) |
+| `rag/loaders.py`, `rag/chunker.py`, `rag/permissions.py` | reused from Project 1 |
+| `rag/embeddings.py` | text → vector via Ollama (with timeout) |
+| `ingest.py` | build the search database: read → chunk → embed → save |
+| `tools/docs.py` | `search_documents(query, role)` → best 3 chunks + sources |
+| `tests/test_docs.py` | 15 tests (fake-embedding test DB + 1 live) |
+
+Run: `.\.venv\Scripts\python.exe ingest.py` once, then `python -m tools.docs` for a demo.
+
+```
+Employee: "hotel limit for international trips?" → travel_policy.txt ("...220 US dollars per night...")
+Employee: "salary bands?"  → only public files (restricted file hidden)
+HR:       "salary bands?"  → hr/restricted/salary_bands.txt
+```
+
+### Key concepts (simple words)
+
+- **The tool finds, it doesn't answer** — like a librarian who brings the right
+  pages but doesn't write your essay. *Why:* in Step 4 the agent mixes pages +
+  currency + weather into one answer.
+
+- **Ingest (prepare the library, once)** — read each file → cut into 80-word
+  chunks (20 words overlap so sentences aren't cut in half) → turn each chunk
+  into numbers (embedding) → store in ChromaDB with labels (source, department,
+  public/restricted).
+
+- **Hybrid search = two judges**
+  - *Meaning judge* (embeddings): finds "lodging cost cap" even if the text says
+    "hotel limit".
+  - *Keyword judge* (BM25): great at exact words like "220" or "VPN".
+  - *Merge (RRF)*: a chunk ranked high by BOTH judges wins.
+
+- **Role filter inside the database query** — the database never even hands
+  back forbidden chunks. *Why:* safer than fetching everything and hiding some
+  afterwards — nothing secret can leak by mistake.
+
+- **Fake embeddings in tests** — tests build a small database with simple
+  word-count "embeddings" instead of the real model: fast, offline, repeatable.
+  The most important test is a *security* test: an Employee must never see
+  restricted files.
+
+- **Reuse by copying** — Project 1's helpers were copied in, so this project
+  runs on its own even if Project 1 moves or changes.

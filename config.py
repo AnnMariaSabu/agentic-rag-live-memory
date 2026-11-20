@@ -1,5 +1,20 @@
 """All project settings live here. Change a value once, it changes everywhere."""
 
+from pathlib import Path
+
+# --- Folders ---
+PROJECT_DIR = Path(__file__).parent
+DOCS_DIR = PROJECT_DIR / "data" / "documents"
+CHROMA_DIR = PROJECT_DIR / "chroma_db"
+
+# --- Document search (reused from Project 1) ---
+COLLECTION_NAME = "company_docs"
+SUPPORTED_EXTENSIONS = {".txt", ".pdf", ".docx"}
+CHUNK_SIZE = 80  # words per chunk
+CHUNK_OVERLAP = 20  # words shared between neighbouring chunks
+TOP_K = 3  # how many chunks the search returns
+RRF_K = 60  # standard constant for merging the two rankings
+
 # --- Ollama (local LLM) ---
 OLLAMA_URL = "http://localhost:11434"
 CHAT_MODEL = "llama3.2"
