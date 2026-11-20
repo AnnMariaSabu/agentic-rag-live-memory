@@ -98,3 +98,45 @@ Run: `.\.venv\Scripts\python.exe -m pytest` (offline: add `-m "not live"`).
 We called Frankfurter by hand before coding: unknown codes give **404**, and
 `USD→USD` gives **422 "bad currency pair"**. So we handle same-currency
 ourselves (rate 1.0, no API call) instead of guessing.
+
+---
+
+## Step 2: Weather tool
+
+### What we built
+| File | Purpose |
+|---|---|
+| `tools/weather.py` | `get_weather(city)` → current weather in words |
+| `tests/test_weather.py` | 12 tests (11 mocked + 1 live) |
+| `config.py` | added `GEOCODING_URL` |
+
+```
+get_weather("Tokyo")  → summary: "Tokyo, Japan: Clear sky, 10.0 °C (feels like 6.9 °C), wind 5.6 km/h"
+get_weather("Atlantisxyz") → error: "City 'Atlantisxyz' not found. Check the spelling..."
+```
+
+### Key concepts (simple words)
+
+- **Two calls in a chain** — weather services only understand map coordinates,
+  not names. So: call 1 (geocoding) turns "Tokyo" into lat/lon, call 2 gets the
+  weather for those coordinates. Like asking "what's the address?" before
+  sending a taxi.
+
+- **Geocoding** — turning a place name into coordinates (latitude, longitude).
+
+- **Codes → words** — the API says `weather_code: 3`; we translate with a small
+  lookup table to "Overcast". *Why:* people and the LLM understand words, not codes.
+  Unknown code → "Unknown conditions" instead of crashing.
+
+- **"Success" can still mean "nothing found"** — a city that doesn't exist does
+  NOT return an error; it returns 200 OK with an empty answer. So
+  `raise_for_status()` alone isn't enough — we must also check that results exist.
+
+- **Stop early** — if the city isn't found, we don't make the weather call at all.
+
+- **Same tool pattern as Step 1** — check input → call API → handle problems
+  politely → return a neat, checked answer (Pydantic) with `source` and `as_of`.
+
+### Lesson learned: look at the real reply first
+Calling the API by hand showed that "not found" looks like success (200 + no
+`results`). Without checking, we would have guessed a 404 and missed the case.

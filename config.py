@@ -8,6 +8,7 @@ EMBED_MODEL = "nomic-embed-text"
 # --- Free public APIs (no key needed) ---
 FRANKFURTER_URL = "https://api.frankfurter.app"
 OPEN_METEO_URL = "https://api.open-meteo.com/v1/forecast"
+GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1/search"  # city name -> coordinates
 
 # --- Network ---
 TIMEOUT = 30  # seconds to wait for web APIs
