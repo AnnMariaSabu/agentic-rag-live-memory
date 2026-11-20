@@ -331,3 +331,29 @@ ask twice    → 2nd time: [cache] ... 🕒 fetched 17:30 UTC (from cache, 0.6 m
   code. If the code didn't change, skip the file (no slow re-embedding). We also mix the chunk
   settings into the hash, so changing CHUNK_SIZE re-processes everything.
 - **Fake clock in tests** — we move time forward by hand instead of waiting 60 minutes.
+
+---
+
+## Step 8: Streamlit UI
+
+### What we built
+| File | Purpose |
+|---|---|
+| `app.py` | chat page: role picker + user ID, "Tools used" panel, 🕒 freshness, 📄 sources, memory sidebar with Forget me |
+| `tests/test_app.py` | UI tests with Streamlit's `AppTest` (no browser) and a fake agent |
+
+Run: `.\.venv\Scripts\streamlit.exe run app.py` → open http://localhost:8501
+
+### Key concepts (simple words)
+- **Streamlit** = turn a Python script into a web page. Every click or message re-runs the
+  script from top to bottom.
+- **Session state** = the page's short-term memory between re-runs (the chat history).
+  Without it, every new message would wipe the old ones.
+- **Show your work** — the "Tools used" panel shows the trace: which tools, what inputs, which
+  documents. Users trust answers they can check; developers can debug.
+- **The UI is thin** — all the thinking lives in `agent.py`; the page only shows inputs and
+  outputs. *Why:* we can test the agent without a browser, and swap the UI later.
+- **Human-only actions** — "Forget me" needs a confirmation tick, then a click. The LLM can't
+  press it.
+- **AppTest** = a robot that "uses" the page in a test: types a message, clicks buttons, reads
+  what's on screen.
