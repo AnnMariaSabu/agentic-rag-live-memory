@@ -206,6 +206,26 @@ def _only_empty_searches(trace) -> bool:
     )
 
 
+def _utc(iso: str) -> str:
+    """'2026-11-20T09:00:39+00:00' -> '2026-11-20 09:00 UTC'"""
+    return iso[:16].replace("T", " ") + " UTC"
+
+
+def freshness_notes(trace) -> list[str]:
+    """Step 7: say how fresh each live fact is. Built by code, so it is always exact."""
+    notes = []
+    for t in trace:
+        r = t["result"]
+        age = f" (from cache, {r['age_minutes']} min old)" if r.get("cached") else " (just fetched)"
+        if "rate" in r and "as_of" in r:
+            notes.append(f"Exchange rate {r['from']}→{r['to']}: ECB rate of {r['date']}, "
+                         f"fetched {_utc(r['as_of'])}{age}")
+        elif "summary" in r and "as_of" in r:
+            notes.append(f"Weather {r['city']}: observed {r['observed_at'].replace('T', ' ')} local time, "
+                         f"fetched {_utc(r['as_of'])}{age}")
+    return list(dict.fromkeys(notes))  # drop exact duplicates, keep order
+
+
 def _with_memories(prompt, memories):
     if not memories:
         return prompt
@@ -225,7 +245,7 @@ def run_agent(question: str, role: str, user_id: str = DEFAULT_USER,
         if _only_empty_searches(trace):
             answer = NO_ANSWER
         return {"answer": answer, "trace": trace, "memories_used": memories,
-                "steps": steps, "stopped_early": stopped_early}
+                "freshness": freshness_notes(trace), "steps": steps, "stopped_early": stopped_early}
 
     try:
         if not needs_tools(question):  # small talk: answer without offering tools
@@ -281,10 +301,11 @@ def short(result):
         found = ", ".join(c["source"] for c in result["results"]) or "nothing relevant"
         return f"{found}  [{tries}]" if tries else found
     if "summary" in result:
-        return result["summary"]
+        return result["summary"] + (" [cache]" if result.get("cached") else "")
     if "rate" in result:
         text = f"1 {result['from']} = {result['rate']} {result['to']}"
-        return text + (f"; {result['amount']} -> {result['converted']}" if "converted" in result else "")
+        text += f"; {result['amount']} -> {result['converted']}" if "converted" in result else ""
+        return text + (" [cache]" if result.get("cached") else "")
     if "saved" in result:
         return f"saved: {result['text']}" if result["saved"] else result["note"]
     return str(result)[:100]
@@ -298,6 +319,8 @@ def print_result(result):
     if not result["trace"]:
         print("  (no tools used)")
     print(f"  💬 {result['answer']}")
+    for note in result.get("freshness", []):
+        print(f"  🕒 {note}")
 
 
 if __name__ == "__main__":

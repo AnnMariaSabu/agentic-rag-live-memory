@@ -20,6 +20,11 @@ MEMORY_DB = PROJECT_DIR / "memory.db"  # SQLite: the list of memories (source of
 MEMORY_COLLECTION = "memories"  # ChromaDB: memories searchable by meaning
 MEMORY_TOP_K = 3  # memories given to the LLM per question
 
+# --- Freshness + cache (Step 7) ---
+CACHE_DB = PROJECT_DIR / "cache.db"
+CURRENCY_TTL_MIN = 60  # ECB rates change once a day -> 1 hour is plenty fresh
+WEATHER_TTL_MIN = 15  # Open-Meteo updates about every 15 minutes
+
 # --- Ollama (local LLM) ---
 OLLAMA_URL = "http://localhost:11434"
 CHAT_MODEL = "llama3.2"

@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 import requests
 from pydantic import BaseModel, Field
 
+import cache
 import config
 
 SOURCE = "Frankfurter (ECB)"
@@ -39,13 +40,13 @@ def _clean_amount(amount):
     return value if value > 0 else "bad"
 
 
-def _result(src, dst, rate, date, amount) -> dict:
+def _result(src, dst, rate, date, as_of, amount, freshness) -> dict:
     result = ExchangeRate(
         from_currency=src, to_currency=dst, rate=rate, date=date,
-        source=SOURCE, as_of=_now(), amount=amount,
+        source=SOURCE, as_of=as_of, amount=amount,
         converted=round(amount * rate, 2) if amount is not None else None,
     )
-    return result.model_dump(by_alias=True, exclude_none=True)
+    return {**result.model_dump(by_alias=True, exclude_none=True), **freshness}
 
 
 def _clean_code(code) -> str | None:
@@ -73,8 +74,19 @@ def get_exchange_rate(from_currency: str, to_currency: str, amount: float | None
 
     # Same currency: answer ourselves (the API rejects this pair with 422).
     if src == dst:
-        return _result(src, dst, 1.0, _now()[:10], amount)
+        return _result(src, dst, 1.0, _now()[:10], _now(), amount, {"cached": False, "age_minutes": 0.0})
 
+    # Step 7: reuse a rate fetched less than CURRENCY_TTL_MIN minutes ago.
+    # We cache the RATE (not the converted amount), so any amount can reuse it.
+    fetched, freshness = cache.cached_call(
+        f"currency:{src}:{dst}", config.CURRENCY_TTL_MIN, lambda: _fetch_rate(src, dst))
+    if "error" in fetched:
+        return fetched
+    return _result(src, dst, fetched["rate"], fetched["date"], fetched["as_of"], amount, freshness)
+
+
+def _fetch_rate(src: str, dst: str) -> dict:
+    """Call Frankfurter. Returns {"rate", "date", "as_of"} or {"error": ...}. Never raises."""
     try:
         r = requests.get(
             f"{config.FRANKFURTER_URL}/latest",
@@ -83,7 +95,10 @@ def get_exchange_rate(from_currency: str, to_currency: str, amount: float | None
         )
         r.raise_for_status()
         data = r.json()
-        return _result(src, dst, data["rates"][dst], data["date"], amount)
+        rate = float(data["rates"][dst])
+        if rate <= 0:
+            raise ValueError("rate must be positive")
+        return {"rate": rate, "date": str(data["date"]), "as_of": _now()}
 
     except requests.Timeout:
         return {"error": "The currency service took too long to answer. Please try again later."}

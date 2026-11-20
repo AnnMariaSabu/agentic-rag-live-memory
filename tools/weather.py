@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 import requests
 from pydantic import BaseModel, Field
 
+import cache
 import config
 
 SOURCE = "Open-Meteo"
@@ -87,6 +88,15 @@ def get_weather(city: str) -> dict:
         return {"error": "Please give a city name, e.g. 'Tokyo'."}
     city = city.strip()
 
+    # Step 7: reuse weather fetched less than WEATHER_TTL_MIN minutes ago.
+    # Key is lower-case, so "Tokyo" and "tokyo" share one cache entry.
+    result, freshness = cache.cached_call(
+        f"weather:{city.lower()}", config.WEATHER_TTL_MIN, lambda: _fetch_weather(city))
+    return result if "error" in result else {**result, **freshness}
+
+
+def _fetch_weather(city: str) -> dict:
+    """Both API calls + translation into words. Never raises."""
     try:
         place = _find_city(city)
         now = _current_weather(place["latitude"], place["longitude"])

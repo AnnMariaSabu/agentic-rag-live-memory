@@ -298,3 +298,36 @@ forget_me("demo-ann")                    → {'deleted': 1}
 - **Privacy by design** — every memory has a `user_id`, set by code (like the role).
   `forget_me` deletes everything, and it is NOT an LLM tool: destructive actions are for
   humans (a button), never for the model.
+
+---
+
+## Step 7: Freshness + cache
+
+### What we built
+| File | Purpose |
+|---|---|
+| `cache.py` | SQLite cache with TTL ("time to live"); errors never cached |
+| `tools/currency.py`, `tools/weather.py` | use the cache: currency 60 min, weather 15 min; results say `cached` + `age_minutes` |
+| `agent.py` | `freshness` notes (🕒) built by code from `as_of` |
+| `ingest.py` | file fingerprints (SHA-256): skip unchanged, redo changed, remove deleted; `--rebuild` |
+| `tests/test_cache.py` | fake-clock cache tests, ingest-hash tests, freshness test |
+
+```
+ingest run 2 → {'added': 0, 'updated': 0, 'unchanged': 8, 'removed': 0}   (nothing re-embedded)
+ask twice    → 2nd time: [cache] ... 🕒 fetched 17:30 UTC (from cache, 0.6 min old)
+```
+
+### Key concepts (simple words)
+- **Cache** = a short-term notebook of answers. Asked the same thing a minute ago? Reuse it:
+  faster, and kinder to free APIs.
+- **TTL (time to live)** = how long an answer stays "fresh". Like milk with a best-before
+  date: currency 60 min (ECB updates daily), weather 15 min (updates every ~15 min).
+- **Never cache errors** — if the service was down, the next call should try again.
+- **`as_of` stays honest** — a cached answer keeps the time it was *really* fetched, plus
+  its age, so the user always knows how fresh the fact is.
+- **Cache the raw fact, not the final answer** — we cache the *rate*, so 100 USD and 220 USD
+  reuse the same cached rate.
+- **File hash (fingerprint)** — a short code computed from a file's bytes. Same bytes → same
+  code. If the code didn't change, skip the file (no slow re-embedding). We also mix the chunk
+  settings into the hash, so changing CHUNK_SIZE re-processes everything.
+- **Fake clock in tests** — we move time forward by hand instead of waiting 60 minutes.

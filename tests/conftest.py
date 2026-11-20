@@ -21,11 +21,13 @@ def fake_embed(texts):
 
 
 @pytest.fixture(autouse=True)
-def isolated_memory(request, tmp_path, monkeypatch):
-    """Every non-live test gets its own empty memory store, and the agent's automatic
-    memory recall is switched off (memory has its own tests)."""
+def isolated_storage(request, tmp_path, monkeypatch):
+    """Every non-live test gets its own empty memory store and cache (so one test's
+    cached answer can't leak into another), and the agent's automatic memory recall
+    is switched off (memory has its own tests)."""
     if request.node.get_closest_marker("live"):
         return
     monkeypatch.setattr(config, "MEMORY_DB", tmp_path / "memory.db")
+    monkeypatch.setattr(config, "CACHE_DB", tmp_path / "cache.db")
     import agent
     monkeypatch.setattr(agent, "recall_memory", lambda user_id, query: [])
