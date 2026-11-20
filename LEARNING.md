@@ -229,3 +229,41 @@ llama3.2 (small, 3B) made 2 mistakes the prompt couldn't fix:
    **dependency rule**: our code postpones that conversion, then sends a short
    **nudge** ("now call get_exchange_rate with the exact amount"). Result: correct ¥35,193.4.
 We measured each change by running the tricky questions several times.
+
+---
+
+## Step 5: Corrective RAG
+
+### What we built
+| File | Purpose |
+|---|---|
+| `grader.py` | `corrective_search(query, role)`: search → grade each chunk → rewrite + retry once → else "I don't know" |
+| `agent.py` | docs tool now uses `corrective_search`; code forces "I don't know" if only empty searches happened; safer router |
+| `tests/test_grader.py` | fake search/LLM tests + JSON validation tests + 1 live test |
+
+```
+"dress code?"  → 'company dress code' kept 0/3 → rewrite 'company dress code policy' kept 0/3
+               → "I don't know based on the company documents."
+"vacation days?" → kept 1/3 (hr_policy) → "You get 20 days of paid annual leave per year."
+```
+
+### Key concepts (simple words)
+- **Corrective RAG** = don't trust search blindly. Search always returns *something*
+  (the "least bad" pages). A grader checks: is this really about the question?
+- **Grader** = the LLM as a quality inspector, one chunk at a time.
+- **Structured output (JSON + Pydantic)** = we force the LLM to reply in a fixed shape
+  `{"reason": "...", "relevant": true}` and Pydantic checks it. Invalid reply → treated
+  as "not relevant" (safe side).
+- **Rewrite + retry once** = if nothing fits, ask the LLM for a better search
+  ("vacation" → "annual leave"), try again. Only once — no endless loops.
+- **"I don't know" decided by code** = if every search came back empty, code replaces
+  the LLM's answer. A wrong answer is worse than no answer.
+
+### Lessons learned (tuning by measuring)
+- Grader too strict → missed VPN. Grader too lenient → kept travel policy for "dress code"
+  (matched only the word "policy"). Fix: make it name the *specific subject* of question
+  and piece, and say synonyms count.
+- **Reason first, and required**: an optional `reason` was skipped by the model → bad
+  verdicts. Required reason = the model "thinks" before deciding.
+- The router sent "dress code?" to small-talk mode, which then invented a policy.
+  Fix: "when unsure → TOOLS", and chat mode may never state company facts. Measured: 18/18.

@@ -13,8 +13,8 @@ import sys
 import requests
 
 import config
+from grader import NO_ANSWER, corrective_search
 from tools.currency import get_exchange_rate
-from tools.docs import search_documents
 from tools.weather import get_weather
 
 MAX_STEPS = 4
@@ -34,10 +34,13 @@ Rules:
    with from_currency "USD" and the exact amount you found. Never invent an amount.
 4. Answer only from the tool results. Copy numbers exactly (use "converted" for money).
    If a tool returns an "error", tell the user briefly.
-5. Answer in one to three short sentences."""
+5. If search_documents returns no results, say exactly: {NO_ANSWER}
+6. Answer in one to three short sentences.""".format(NO_ANSWER=NO_ANSWER)
 
 CHAT_PROMPT = """You are the friendly helpdesk assistant for employees of Acme Corp (a normal company).
 You can answer questions about company policies, convert currencies and check the weather.
+In this mode you have NO documents: never state any company rule, number, rate or weather.
+If asked for one, say you need to look it up and ask the user to ask the question directly.
 Reply in one or two short sentences."""
 
 NUDGE = ("You now have the policy search result. Call get_exchange_rate now with "
@@ -46,16 +49,20 @@ NUDGE = ("You now have the policy search result. Call get_exchange_rate now with
 
 # Router: small models call a tool for almost everything (even "Hi!") when tools are
 # offered. So we first ask, with NO tools offered, whether tools are needed at all.
-ROUTER_PROMPT = """Decide if the user's message needs facts from Acme's company policies,
-live exchange rates or live weather.
+ROUTER_PROMPT = """Decide if the user's message needs facts (company rules, work, money,
+currency, travel or weather).
 Reply with exactly one word:
-TOOLS - it asks about a policy, money/currency, prices, limits, or weather
-CHAT  - greeting, thanks, small talk, or a question about you
+CHAT  - ONLY a pure greeting, thanks, goodbye, or a question about who you are
+TOOLS - everything else, including ANY question about the company or work
+If you are unsure, reply TOOLS.
 
 Examples:
 "Hi!" -> CHAT
 "Thanks, that helps" -> CHAT
+"Who are you?" -> CHAT
 "How many vacation days do I get?" -> TOOLS
+"Can I work from home?" -> TOOLS
+"What's the rule on overtime?" -> TOOLS
 "100 USD in EUR?" -> TOOLS
 "Is it raining in London?" -> TOOLS"""
 
@@ -64,7 +71,7 @@ Examples:
 # "needs_role": our code adds the user's role — the LLM never chooses it (security).
 TOOLS = {
     "search_documents": {
-        "function": search_documents,
+        "function": corrective_search,  # Step 5: search + grade + retry once
         "needs_role": True,
         "schema": {
             "type": "function",
@@ -190,6 +197,21 @@ def _must_wait(call, calls):
     return fn.get("name") == "get_exchange_rate" and has_amount and "search_documents" in names
 
 
+def _only_empty_searches(trace) -> bool:
+    """True if the agent ONLY searched documents and every search found nothing relevant.
+    Then code (not the LLM) decides the answer: "I don't know" — no made-up policies."""
+    return bool(trace) and all(
+        t["tool"] == "search_documents" and not t["result"].get("results") and "error" not in t["result"]
+        for t in trace
+    )
+
+
+def _finish(answer, trace, steps, stopped_early):
+    if _only_empty_searches(trace):
+        answer = NO_ANSWER
+    return {"answer": answer, "trace": trace, "steps": steps, "stopped_early": stopped_early}
+
+
 def run_agent(question: str, role: str, max_steps: int = MAX_STEPS) -> dict:
     """Answer a question, using tools as the LLM decides.
     Returns {"answer", "trace", "steps", "stopped_early"}."""
@@ -211,8 +233,7 @@ def run_agent(question: str, role: str, max_steps: int = MAX_STEPS) -> dict:
 
             calls = message.get("tool_calls") or []
             if not calls:  # no tool wanted -> this is the final answer
-                return {"answer": message.get("content", "").strip(), "trace": trace,
-                        "steps": step, "stopped_early": False}
+                return _finish(message.get("content", "").strip(), trace, step, False)
 
             postponed = False
             for call in calls:
@@ -231,8 +252,7 @@ def run_agent(question: str, role: str, max_steps: int = MAX_STEPS) -> dict:
         messages.append({"role": "user", "content": "Please give your final answer now, "
                                                     "using only the tool results above."})
         message = chat(messages, use_tools=False)
-        return {"answer": message.get("content", "").strip(), "trace": trace,
-                "steps": max_steps, "stopped_early": True}
+        return _finish(message.get("content", "").strip(), trace, max_steps, True)
 
     except requests.RequestException as e:
         return {"answer": f"Sorry, the AI model is not reachable right now ({type(e).__name__}). "
@@ -246,7 +266,10 @@ def short(result):
     if "postponed" in result:
         return "POSTPONED (waiting for the policy search result)"
     if "results" in result:
-        return ", ".join(c["source"] for c in result["results"])
+        tries = " → ".join(f"'{a['query']}' kept {a['kept']}/{a['checked']}"
+                           for a in result.get("attempts", []))
+        found = ", ".join(c["source"] for c in result["results"]) or "nothing relevant"
+        return f"{found}  [{tries}]" if tries else found
     if "summary" in result:
         return result["summary"]
     if "rate" in result:
