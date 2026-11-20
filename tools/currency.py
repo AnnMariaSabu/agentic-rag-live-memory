@@ -24,6 +24,28 @@ class ExchangeRate(BaseModel):
     date: str  # day the rate was published
     source: str
     as_of: str  # when WE fetched it (UTC)
+    amount: float | None = None  # optional: how much money to convert
+    converted: float | None = None  # amount * rate, computed by code (LLMs are bad at maths)
+
+
+def _clean_amount(amount):
+    """None stays None; '220' or 220 -> 220.0; anything else -> 'bad'."""
+    if amount is None:
+        return None
+    try:
+        value = float(amount)
+    except (TypeError, ValueError):
+        return "bad"
+    return value if value > 0 else "bad"
+
+
+def _result(src, dst, rate, date, amount) -> dict:
+    result = ExchangeRate(
+        from_currency=src, to_currency=dst, rate=rate, date=date,
+        source=SOURCE, as_of=_now(), amount=amount,
+        converted=round(amount * rate, 2) if amount is not None else None,
+    )
+    return result.model_dump(by_alias=True, exclude_none=True)
 
 
 def _clean_code(code) -> str | None:
@@ -38,20 +60,20 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
-def get_exchange_rate(from_currency: str, to_currency: str) -> dict:
-    """How much 1 unit of from_currency is worth in to_currency."""
+def get_exchange_rate(from_currency: str, to_currency: str, amount: float | None = None) -> dict:
+    """How much 1 unit of from_currency is worth in to_currency.
+    With amount, also returns 'converted' = amount in to_currency."""
     src, dst = _clean_code(from_currency), _clean_code(to_currency)
     if src is None or dst is None:
         bad = from_currency if src is None else to_currency
         return {"error": f"'{bad}' is not a valid currency code. Use 3 letters, e.g. USD, EUR, JPY."}
+    amount = _clean_amount(amount)
+    if amount == "bad":
+        return {"error": "The amount must be a positive number, e.g. 220."}
 
     # Same currency: answer ourselves (the API rejects this pair with 422).
     if src == dst:
-        result = ExchangeRate(
-            from_currency=src, to_currency=dst, rate=1.0,
-            date=_now()[:10], source=SOURCE, as_of=_now(),
-        )
-        return result.model_dump(by_alias=True)
+        return _result(src, dst, 1.0, _now()[:10], amount)
 
     try:
         r = requests.get(
@@ -61,11 +83,7 @@ def get_exchange_rate(from_currency: str, to_currency: str) -> dict:
         )
         r.raise_for_status()
         data = r.json()
-        result = ExchangeRate(
-            from_currency=src, to_currency=dst, rate=data["rates"][dst],
-            date=data["date"], source=SOURCE, as_of=_now(),
-        )
-        return result.model_dump(by_alias=True)
+        return _result(src, dst, data["rates"][dst], data["date"], amount)
 
     except requests.Timeout:
         return {"error": "The currency service took too long to answer. Please try again later."}

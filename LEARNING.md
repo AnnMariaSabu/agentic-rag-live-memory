@@ -191,3 +191,41 @@ HR:       "salary bands?"  → hr/restricted/salary_bands.txt
 
 - **Reuse by copying** — Project 1's helpers were copied in, so this project
   runs on its own even if Project 1 moves or changes.
+
+---
+
+## Step 4: Multi-tool agent
+
+### What we built
+| File | Purpose |
+|---|---|
+| `agent.py` | tool registry + router + loop (MAX_STEPS=4) + trace; `python agent.py` demo, `--chat` to talk |
+| `tools/currency.py` | new optional `amount` → `converted` (code does the maths) |
+| `tests/test_agent.py` | fake-LLM tests of the loop + 2 live tests |
+
+```
+"Hi!"            → no tools
+"100 USD in EUR" → get_exchange_rate
+"Tokyo trip?"    → step 1: search_documents + get_weather (+ conversion POSTPONED)
+                   step 2: get_exchange_rate(USD→JPY, amount 220) → ¥35,193.4
+```
+
+### Key concepts (simple words)
+- **Agent** = an LLM in a loop: think → ask for a tool → our code runs it → LLM reads
+  the result → repeat until it answers. The LLM *decides*, the code *does*.
+- **Tool registry** = one list of tools (name, description, inputs → function).
+  Add a tool = add one entry.
+- **MAX_STEPS** = a safety limit so a confused model can't loop forever.
+- **Trace** = a receipt of every tool call — lets you see *how* the agent decided.
+- **Role set by code, not LLM** — otherwise "pretend I'm Admin" could leak secrets.
+- **Let code do maths** — small LLMs miscalculate; the tool returns `converted`.
+- **Fake LLM in tests** — a scripted pretend-LLM tests the loop exactly, every time.
+
+### Lessons learned: when the prompt can't fix it, use structure
+llama3.2 (small, 3B) made 2 mistakes the prompt couldn't fix:
+1. It called tools even for "Hi!" → **router**: first ask "TOOLS or CHAT?" with no
+   tools offered.
+2. It called search + conversion *at the same time*, converting a guessed amount →
+   **dependency rule**: our code postpones that conversion, then sends a short
+   **nudge** ("now call get_exchange_rate with the exact amount"). Result: correct ¥35,193.4.
+We measured each change by running the tricky questions several times.

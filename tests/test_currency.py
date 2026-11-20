@@ -90,6 +90,27 @@ def test_weird_reply_shape(mock_get):
     assert "unexpected answer" in get_exchange_rate("USD", "JPY")["error"]
 
 
+@patch("tools.currency.requests.get")
+def test_amount_is_converted_by_code(mock_get):
+    mock_get.return_value = fake_response(200, OK_REPLY)
+    result = get_exchange_rate("USD", "JPY", amount="220")  # LLMs may send a string
+    assert result["amount"] == 220.0
+    assert result["converted"] == round(220 * 159.97, 2)
+
+
+@patch("tools.currency.requests.get")
+def test_no_amount_means_no_converted_field(mock_get):
+    mock_get.return_value = fake_response(200, OK_REPLY)
+    assert "converted" not in get_exchange_rate("USD", "JPY")
+
+
+@pytest.mark.parametrize("bad", [-5, 0, "lots"])
+@patch("tools.currency.requests.get")
+def test_bad_amount_needs_no_api(mock_get, bad):
+    assert "positive number" in get_exchange_rate("USD", "JPY", amount=bad)["error"]
+    mock_get.assert_not_called()
+
+
 @pytest.mark.live
 def test_live_usd_to_jpy():
     """Real API call. Skip offline with: pytest -m "not live" """
