@@ -393,3 +393,48 @@ First run: 27/30. Two real bugs that all 100+ tests had missed:
 2. "Said it but didn't do it": the model *wrote* "I'll call get_exchange_rate" instead of
    calling it. Fix: code spots tool names in the answer and nudges "call it now".
 Both fixes got unit tests, then the full evaluation was run again on the final code.
+
+---
+
+## Step 10: README + notes
+
+### What we built
+- `README.md` — what the project does, how it works (diagram), setup, how to run, tests,
+  evaluation results, project structure, limitations.
+- This file — one section per step.
+
+### Key concept: write for your reader
+The README is for *someone else* (a recruiter, a teammate, future you): what is it, why should
+I care, how do I run it, how good is it, what can't it do. LEARNING.md is for *you*: what each
+step taught.
+
+---
+
+## The whole project in one picture
+
+```
+question + role + user
+   │
+   ├─ recall memories (code)                      Step 6
+   ├─ router: small talk or needs facts?          Step 4
+   ▼
+ agent loop (max 4): LLM picks tools, code runs   Step 4
+   ├─ search_documents → grade → rewrite → retry  Steps 3 + 5
+   ├─ get_exchange_rate → cache → Frankfurter     Steps 1 + 7
+   ├─ get_weather → cache → Open-Meteo            Steps 2 + 7
+   └─ save_memory → SQLite + ChromaDB             Step 6
+   ▼
+ answer + trace + 🕒 freshness → Streamlit UI      Steps 7 + 8
+ measured by 30-question evaluation               Step 9
+```
+
+### The 7 biggest lessons
+1. **A tool is just a function** with a clear input, a clear output, and polite errors.
+2. **The LLM decides, the code does** — and code handles anything that must be safe or
+   exact: roles, user IDs, maths, "I don't know", timestamps.
+3. **Don't trust search blindly** — grade what you retrieved; say "I don't know" rather than guess.
+4. **When the prompt can't fix it, add structure** — router, postpone + nudge, "call it now".
+5. **Look at the real data first** — APIs and models surprise you ("not found" = 200 OK).
+6. **Fakes for tests, real things for evaluation** — tests check code exactly; evaluation
+   checks the whole system and finds the bugs tests miss.
+7. **Measure every change** — run the tricky questions before and after.
