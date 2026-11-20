@@ -267,3 +267,34 @@ We measured each change by running the tricky questions several times.
   verdicts. Required reason = the model "thinks" before deciding.
 - The router sent "dress code?" to small-talk mode, which then invented a policy.
   Fix: "when unsure → TOOLS", and chat mode may never state company facts. Measured: 18/18.
+
+---
+
+## Step 6: Long-term memory
+
+### What we built
+| File | Purpose |
+|---|---|
+| `memory.py` | `save_memory`, `recall_memory`, `list_memories`, `forget_me` (SQLite + ChromaDB) |
+| `agent.py` | new `save_memory` tool; memories recalled automatically before every answer; `user_id` injected by code |
+| `tests/test_memory.py`, `tests/conftest.py` | memory tests (fake embeddings, temp folders) + shared helpers |
+
+```
+"Please remember that I am vegetarian." → save_memory("The user is vegetarian.")
+(new chat) "Flying to Tokyo..."          → 🧠 memories: ['The user is vegetarian.']
+"What do you remember about me?"        → "You're a vegetarian..."
+forget_me("demo-ann")                    → {'deleted': 1}
+```
+
+### Key concepts (simple words)
+- **Short-term vs long-term memory** — the chat history disappears when you close the app;
+  long-term memory is saved to disk and comes back next time.
+- **Two stores, two jobs**
+  - *SQLite* = the notebook: a plain list (show all, count, delete). Source of truth.
+  - *ChromaDB* = the same notes with "meaning fingerprints", to find the ones that
+    matter for *this* question ("trip dinner" → "vegetarian").
+- **Code recalls, LLM saves** — small models forget to *look up* memories, so code does it
+  before every answer. *Saving* needs judgment ("is this a lasting fact?"), so the LLM decides.
+- **Privacy by design** — every memory has a `user_id`, set by code (like the role).
+  `forget_me` deletes everything, and it is NOT an LLM tool: destructive actions are for
+  humans (a button), never for the model.

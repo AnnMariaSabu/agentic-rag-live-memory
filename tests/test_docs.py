@@ -5,8 +5,6 @@ FAKE embeddings (word-count vectors) so they are fast and run offline.
 The 'live' test uses real Ollama embeddings.
 """
 
-import hashlib
-import re
 from unittest.mock import patch
 
 import pytest
@@ -16,18 +14,8 @@ import config
 import ingest
 from rag.chunker import split_text
 from rag.permissions import search_filter
+from tests.conftest import fake_embed
 from tools.docs import search_documents
-
-
-def fake_embed(texts):
-    """Each word adds 1 to one of 64 slots -> similar words, similar vectors."""
-    vectors = []
-    for t in texts:
-        v = [0.0] * 64
-        for w in re.findall(r"\w+", t.lower()):
-            v[int(hashlib.md5(w.encode()).hexdigest(), 16) % 64] += 1.0
-        vectors.append(v)
-    return vectors
 
 
 @pytest.fixture

@@ -15,6 +15,11 @@ CHUNK_OVERLAP = 20  # words shared between neighbouring chunks
 TOP_K = 3  # how many chunks the search returns
 RRF_K = 60  # standard constant for merging the two rankings
 
+# --- Long-term memory (Step 6) ---
+MEMORY_DB = PROJECT_DIR / "memory.db"  # SQLite: the list of memories (source of truth)
+MEMORY_COLLECTION = "memories"  # ChromaDB: memories searchable by meaning
+MEMORY_TOP_K = 3  # memories given to the LLM per question
+
 # --- Ollama (local LLM) ---
 OLLAMA_URL = "http://localhost:11434"
 CHAT_MODEL = "llama3.2"
