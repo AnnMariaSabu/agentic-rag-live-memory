@@ -357,3 +357,39 @@ Run: `.\.venv\Scripts\streamlit.exe run app.py` → open http://localhost:8501
   press it.
 - **AppTest** = a robot that "uses" the page in a test: types a message, clicks buttons, reads
   what's on screen.
+
+---
+
+## Step 9: Evaluation
+
+### What we built
+| File | Purpose |
+|---|---|
+| `eval/questions.json` | 30 questions: docs 10, currency 4, weather 4, mixed 4, small talk 2, refusal 4, memory 2 |
+| `eval/run_eval.py` | runs the REAL agent with MOCKED currency/weather APIs and scores every answer |
+| `eval/report.md` | the scores + every question's answer |
+| `tests/test_eval.py` | tests for the scoring rules themselves |
+
+Run: `.\.venv\Scripts\python.exe -m eval.run_eval` (≈30 min; `-m eval.run_eval mix-01` for one question)
+
+### Key concepts (simple words)
+- **Tests vs evaluation** — tests check the *code* with a fake LLM (exact, fast). Evaluation
+  checks the *whole system with the real LLM* on realistic questions. You need both.
+- **Mocked APIs** — real rates change every day, so "100 USD in EUR" would have a different
+  correct answer tomorrow. With fixed fake rates (1 USD = 0.9 EUR) the expected answer is
+  always "90".
+- **Four scores**
+  - *tools*: did it call exactly the right tools?
+  - *answer*: does the answer contain the right facts (and no forbidden ones)?
+  - *refusal*: "I don't know" when it should — and NOT when it shouldn't.
+  - *memory*: was the fact saved / recalled?
+- **Test the judge** — the scoring rules have their own unit tests; a wrong judge gives
+  wrong scores.
+
+### Lesson learned: evaluation finds bugs tests miss
+First run: 27/30. Two real bugs that all 100+ tests had missed:
+1. A live-data error ("XYZ is not a currency") was answered with "I don't know based on the
+   company documents" — misleading. Fix: code shows the real error instead.
+2. "Said it but didn't do it": the model *wrote* "I'll call get_exchange_rate" instead of
+   calling it. Fix: code spots tool names in the answer and nudges "call it now".
+Both fixes got unit tests, then the full evaluation was run again on the final code.

@@ -1,0 +1,455 @@
+[
+  {
+    "id": "docs-01",
+    "category": "docs",
+    "question": "How many days of paid annual leave do I get per year?",
+    "answer": "You get 20 days of paid annual leave per year.",
+    "tools_used": [
+      "search_documents"
+    ],
+    "scores": {
+      "tools": true,
+      "answer": true,
+      "refusal": true
+    },
+    "seconds": 99.5
+  },
+  {
+    "id": "docs-02",
+    "category": "docs",
+    "question": "How many paid sick days do full-time employees get?",
+    "answer": "Full-time employees receive 10 days of paid sick leave per year.",
+    "tools_used": [
+      "search_documents"
+    ],
+    "scores": {
+      "tools": true,
+      "answer": true,
+      "refusal": true
+    },
+    "seconds": 93.7
+  },
+  {
+    "id": "docs-03",
+    "category": "docs",
+    "question": "What is the hotel limit per night for domestic trips?",
+    "answer": "The hotel limit per night for domestic trips is $150.",
+    "tools_used": [
+      "search_documents"
+    ],
+    "scores": {
+      "tools": true,
+      "answer": true,
+      "refusal": true
+    },
+    "seconds": 54.9
+  },
+  {
+    "id": "docs-04",
+    "category": "docs",
+    "question": "What is the meal allowance per day on international trips?",
+    "answer": "The meal allowance per day on international trips is $75.",
+    "tools_used": [
+      "search_documents"
+    ],
+    "scores": {
+      "tools": true,
+      "answer": true,
+      "refusal": true
+    },
+    "seconds": 62.4
+  },
+  {
+    "id": "docs-05",
+    "category": "docs",
+    "question": "How many characters must my password have at least?",
+    "answer": "According to the company policy, your password must be at least 12 characters long and include a number and a symbol.",
+    "tools_used": [
+      "search_documents"
+    ],
+    "scores": {
+      "tools": true,
+      "answer": true,
+      "refusal": true
+    },
+    "seconds": 58.6
+  },
+  {
+    "id": "docs-06",
+    "category": "docs",
+    "question": "Do I need to use the VPN when I work from a cafe?",
+    "answer": "Yes, you need to use the VPN when working from a cafe. According to the company policy, the VPN is required when working outside the office, including from home, hotels, airports, and cafes.",
+    "tools_used": [
+      "search_documents"
+    ],
+    "scores": {
+      "tools": true,
+      "answer": true,
+      "refusal": true
+    },
+    "seconds": 62.1
+  },
+  {
+    "id": "docs-07",
+    "category": "docs",
+    "question": "How much is the monthly gym allowance?",
+    "answer": "The monthly gym allowance is 40 US dollars.",
+    "tools_used": [
+      "search_documents"
+    ],
+    "scores": {
+      "tools": true,
+      "answer": true,
+      "refusal": true
+    },
+    "seconds": 54.0
+  },
+  {
+    "id": "docs-08",
+    "category": "docs",
+    "question": "How many days per week can I work from home?",
+    "answer": "You can work from home up to 2 days per week, with manager approval.",
+    "tools_used": [
+      "search_documents"
+    ],
+    "scores": {
+      "tools": true,
+      "answer": true,
+      "refusal": true
+    },
+    "seconds": 54.7
+  },
+  {
+    "id": "docs-09",
+    "category": "docs",
+    "question": "What is the maximum size of an email attachment?",
+    "answer": "The maximum size of an email attachment is 25 MB.",
+    "tools_used": [
+      "search_documents"
+    ],
+    "scores": {
+      "tools": true,
+      "answer": true,
+      "refusal": true
+    },
+    "seconds": 58.6
+  },
+  {
+    "id": "docs-10",
+    "category": "docs",
+    "question": "What is the salary range for a Senior Engineer?",
+    "answer": "The salary range for a Senior Engineer at Acme Corp is between $85,000 and $115,000 per year.",
+    "tools_used": [
+      "search_documents"
+    ],
+    "scores": {
+      "tools": true,
+      "answer": true,
+      "refusal": true
+    },
+    "seconds": 61.8
+  },
+  {
+    "id": "fx-01",
+    "category": "currency",
+    "question": "How much is 100 USD in EUR?",
+    "answer": "100 USD is equivalent to 90 EUR.",
+    "tools_used": [
+      "get_exchange_rate"
+    ],
+    "scores": {
+      "tools": true,
+      "answer": true,
+      "refusal": true
+    },
+    "seconds": 19.0
+  },
+  {
+    "id": "fx-02",
+    "category": "currency",
+    "question": "Convert 50 EUR to GBP.",
+    "answer": "You have been converted to 42.5 GBP.",
+    "tools_used": [
+      "get_exchange_rate"
+    ],
+    "scores": {
+      "tools": true,
+      "answer": true,
+      "refusal": true
+    },
+    "seconds": 28.1
+  },
+  {
+    "id": "fx-03",
+    "category": "currency",
+    "question": "What is the exchange rate from USD to JPY today?",
+    "answer": "The current exchange rate from USD to JPY is 1 USD = 150 JPY.",
+    "tools_used": [
+      "get_exchange_rate"
+    ],
+    "scores": {
+      "tools": true,
+      "answer": true,
+      "refusal": true
+    },
+    "seconds": 30.3
+  },
+  {
+    "id": "fx-04",
+    "category": "currency",
+    "question": "Convert 100 USD to XYZ.",
+    "answer": "Sorry, I couldn't get that: Unknown currency code 'USD' or 'XYZ'. Use codes like USD, EUR, JPY.",
+    "tools_used": [
+      "get_exchange_rate"
+    ],
+    "scores": {
+      "tools": true,
+      "answer": true,
+      "refusal": true
+    },
+    "seconds": 29.0
+  },
+  {
+    "id": "wx-01",
+    "category": "weather",
+    "question": "What's the weather in Paris right now?",
+    "answer": "The current weather in Paris is light rain with a temperature of 8.0°C (feels like 5.0°C) and a wind speed of 10.0 km/h.",
+    "tools_used": [
+      "get_weather"
+    ],
+    "scores": {
+      "tools": true,
+      "answer": true,
+      "refusal": true
+    },
+    "seconds": 57.8
+  },
+  {
+    "id": "wx-02",
+    "category": "weather",
+    "question": "How cold is it in Berlin right now?",
+    "answer": "It is currently -2.0°C (feels like -6.0°C) in Berlin, Germany, with light snow and a wind speed of 10.0 km/h.",
+    "tools_used": [
+      "get_weather"
+    ],
+    "scores": {
+      "tools": true,
+      "answer": true,
+      "refusal": true
+    },
+    "seconds": 66.8
+  },
+  {
+    "id": "wx-03",
+    "category": "weather",
+    "question": "Is it sunny in Tokyo at the moment?",
+    "answer": "It is currently clear in Tokyo, with a temperature of 12.0°C (feels like 10.0°C) and a gentle breeze of 10.0 km/h.",
+    "tools_used": [
+      "get_weather"
+    ],
+    "scores": {
+      "tools": true,
+      "answer": true,
+      "refusal": true
+    },
+    "seconds": 51.4
+  },
+  {
+    "id": "wx-04",
+    "category": "weather",
+    "question": "What's the weather in Atlantisxyz?",
+    "answer": "Sorry, I couldn't get that: City 'Atlantisxyz' not found. Check the spelling, e.g. 'Tokyo' or 'Paris'.",
+    "tools_used": [
+      "get_weather"
+    ],
+    "scores": {
+      "tools": true,
+      "answer": true,
+      "refusal": true
+    },
+    "seconds": 28.9
+  },
+  {
+    "id": "mix-01",
+    "category": "mixed",
+    "question": "I'm flying to Tokyo next week. What's my hotel limit per night in yen, and what's the weather there now?",
+    "answer": "The hotel limit in Tokyo is 33,000 yen per night. The current weather in Tokyo is clear with a temperature of 12°C (feels like 10°C).",
+    "tools_used": [
+      "search_documents",
+      "get_exchange_rate",
+      "get_weather",
+      "get_exchange_rate"
+    ],
+    "scores": {
+      "tools": true,
+      "answer": true,
+      "refusal": true
+    },
+    "seconds": 159.0
+  },
+  {
+    "id": "mix-02",
+    "category": "mixed",
+    "question": "What is my meal allowance per day on an international trip, in euros?",
+    "answer": "The meal allowance per day on an international trip is €67.50.",
+    "tools_used": [
+      "search_documents",
+      "get_exchange_rate",
+      "get_exchange_rate"
+    ],
+    "scores": {
+      "tools": true,
+      "answer": true,
+      "refusal": true
+    },
+    "seconds": 147.6
+  },
+  {
+    "id": "mix-03",
+    "category": "mixed",
+    "question": "What's my international hotel limit per night in British pounds?",
+    "answer": "The hotel limit per night for international trips is 176 GBP.",
+    "tools_used": [
+      "search_documents",
+      "get_exchange_rate"
+    ],
+    "scores": {
+      "tools": true,
+      "answer": true,
+      "refusal": true
+    },
+    "seconds": 131.0
+  },
+  {
+    "id": "mix-04",
+    "category": "mixed",
+    "question": "I'm visiting Paris. What's the weather there, and how much is 200 USD in EUR?",
+    "answer": "The current weather in Paris is Light rain, 8.0°C (feels like 5.0°C), wind 10.0 km/h. 200 USD is equivalent to 180 EUR.",
+    "tools_used": [
+      "get_weather",
+      "get_exchange_rate"
+    ],
+    "scores": {
+      "tools": true,
+      "answer": true,
+      "refusal": true
+    },
+    "seconds": 73.9
+  },
+  {
+    "id": "chat-01",
+    "category": "smalltalk",
+    "question": "Hi!",
+    "answer": "Hello! How can I assist you today?",
+    "tools_used": [],
+    "scores": {
+      "tools": true,
+      "answer": true,
+      "refusal": true
+    },
+    "seconds": 7.9
+  },
+  {
+    "id": "chat-02",
+    "category": "smalltalk",
+    "question": "Thanks for your help!",
+    "answer": "You're welcome! How can I assist you today?",
+    "tools_used": [],
+    "scores": {
+      "tools": true,
+      "answer": true,
+      "refusal": true
+    },
+    "seconds": 6.2
+  },
+  {
+    "id": "ref-01",
+    "category": "refusal",
+    "question": "What is the company dress code?",
+    "answer": "I don't know based on the company documents.",
+    "tools_used": [
+      "search_documents"
+    ],
+    "scores": {
+      "tools": true,
+      "answer": true,
+      "refusal": true
+    },
+    "seconds": 99.6
+  },
+  {
+    "id": "ref-02",
+    "category": "refusal",
+    "question": "Do employees get stock options?",
+    "answer": "I don't know based on the company documents.",
+    "tools_used": [
+      "search_documents"
+    ],
+    "scores": {
+      "tools": true,
+      "answer": true,
+      "refusal": true
+    },
+    "seconds": 120.2
+  },
+  {
+    "id": "ref-03",
+    "category": "refusal",
+    "question": "Can I bring my dog to the office?",
+    "answer": "I don't know based on the company documents.",
+    "tools_used": [
+      "search_documents"
+    ],
+    "scores": {
+      "tools": true,
+      "answer": true,
+      "refusal": true
+    },
+    "seconds": 98.6
+  },
+  {
+    "id": "ref-04",
+    "category": "refusal",
+    "question": "What is the salary range for a Senior Engineer?",
+    "answer": "I don't know based on the company documents.",
+    "tools_used": [
+      "search_documents"
+    ],
+    "scores": {
+      "tools": true,
+      "answer": true,
+      "refusal": true
+    },
+    "seconds": 83.8
+  },
+  {
+    "id": "mem-01",
+    "category": "memory",
+    "question": "Please remember that I am vegetarian.",
+    "answer": "I've saved that for future reference. How can I assist you further?",
+    "tools_used": [
+      "save_memory"
+    ],
+    "scores": {
+      "tools": true,
+      "answer": true,
+      "refusal": true,
+      "memory": true
+    },
+    "seconds": 21.6
+  },
+  {
+    "id": "mem-02",
+    "category": "memory",
+    "question": "What do you remember about me?",
+    "answer": "You're a vegetarian, and we've had a previous conversation.",
+    "tools_used": [],
+    "scores": {
+      "tools": true,
+      "answer": true,
+      "refusal": true,
+      "memory": true
+    },
+    "seconds": 12.6
+  }
+]

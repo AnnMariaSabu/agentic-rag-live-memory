@@ -38,7 +38,8 @@ Rules:
    with from_currency "USD" and the exact amount you found. Never invent an amount.
 4. Answer only from the tool results. Copy numbers exactly (use "converted" for money).
    If a tool returns an "error", tell the user briefly.
-5. If search_documents returns no results, say exactly: {NO_ANSWER}
+5. ONLY if search_documents returns no results, say exactly: {NO_ANSWER}
+   If another tool returns an error, explain that error instead.
 6. If the user tells you a lasting personal fact or preference (diet, home city, family,
    allergies...) or asks you to remember something, call save_memory with one short
    sentence, e.g. "The user is vegetarian."
@@ -54,6 +55,9 @@ Reply in one or two short sentences."""
 NUDGE = ("You now have the policy search result. Call get_exchange_rate now with "
          "from_currency \"USD\", the currency the user asked for, and the exact USD amount "
          "from the policy text as \"amount\".")
+
+# Used when the model WRITES about a tool ("I'll call get_exchange_rate...") instead of calling it
+DO_IT_NUDGE = "Do not describe tool calls in your answer. Call {tools} now using the tool interface."
 
 # Router: small models call a tool for almost everything (even "Hi!") when tools are
 # offered. So we first ask, with NO tools offered, whether tools are needed at all.
@@ -206,6 +210,19 @@ def _only_empty_searches(trace) -> bool:
     )
 
 
+def _tool_errors(trace) -> list[str]:
+    """Error messages from tools other than the document search."""
+    return [t["result"]["error"] for t in trace
+            if t["tool"] != "search_documents" and "error" in t["result"]]
+
+
+def _described_tools(text: str, trace) -> list[str]:
+    """Tool names the model mentions in its answer but never actually called
+    ("said it but didn't do it")."""
+    called = {t["tool"] for t in trace if "postponed" not in t["result"]}
+    return [name for name in TOOLS if name in text and name not in called]
+
+
 def _utc(iso: str) -> str:
     """'2026-11-20T09:00:39+00:00' -> '2026-11-20 09:00 UTC'"""
     return iso[:16].replace("T", " ") + " UTC"
@@ -244,6 +261,10 @@ def run_agent(question: str, role: str, user_id: str = DEFAULT_USER,
     def done(answer, steps, stopped_early):
         if _only_empty_searches(trace):
             answer = NO_ANSWER
+        elif NO_ANSWER.lower() in answer.lower() and _tool_errors(trace) and not any(
+                t["tool"] == "search_documents" for t in trace):
+            # The model used the "no documents" phrase for a live-data error: show the real reason
+            answer = "Sorry, I couldn't get that: " + " ".join(_tool_errors(trace))
         return {"answer": answer, "trace": trace, "memories_used": memories,
                 "freshness": freshness_notes(trace), "steps": steps, "stopped_early": stopped_early}
 
@@ -262,8 +283,14 @@ def run_agent(question: str, role: str, user_id: str = DEFAULT_USER,
             messages.append(message)
 
             calls = message.get("tool_calls") or []
-            if not calls:  # no tool wanted -> this is the final answer
-                return done(message.get("content", "").strip(), step, False)
+            if not calls:  # no tool wanted -> this is the final answer ...
+                text = message.get("content", "").strip()
+                described = _described_tools(text, trace)
+                if described and step < max_steps:  # ... unless it only TALKED about a tool
+                    messages.append({"role": "user",
+                                     "content": DO_IT_NUDGE.format(tools=", ".join(described))})
+                    continue
+                return done(text, step, False)
 
             postponed = False
             for call in calls:

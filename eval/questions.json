@@ -1,0 +1,38 @@
+[
+  {"id": "docs-01", "category": "docs", "role": "Employee", "question": "How many days of paid annual leave do I get per year?", "tools": ["search_documents"], "must_contain": ["20"]},
+  {"id": "docs-02", "category": "docs", "role": "Employee", "question": "How many paid sick days do full-time employees get?", "tools": ["search_documents"], "must_contain": ["10"]},
+  {"id": "docs-03", "category": "docs", "role": "Employee", "question": "What is the hotel limit per night for domestic trips?", "tools": ["search_documents"], "must_contain": ["150"]},
+  {"id": "docs-04", "category": "docs", "role": "Employee", "question": "What is the meal allowance per day on international trips?", "tools": ["search_documents"], "must_contain": ["75"]},
+  {"id": "docs-05", "category": "docs", "role": "Employee", "question": "How many characters must my password have at least?", "tools": ["search_documents"], "must_contain": ["12"]},
+  {"id": "docs-06", "category": "docs", "role": "Employee", "question": "Do I need to use the VPN when I work from a cafe?", "tools": ["search_documents"], "must_contain": ["vpn"]},
+  {"id": "docs-07", "category": "docs", "role": "Employee", "question": "How much is the monthly gym allowance?", "tools": ["search_documents"], "must_contain": ["40"]},
+  {"id": "docs-08", "category": "docs", "role": "Employee", "question": "How many days per week can I work from home?", "tools": ["search_documents"], "must_contain": ["2"]},
+  {"id": "docs-09", "category": "docs", "role": "Employee", "question": "What is the maximum size of an email attachment?", "tools": ["search_documents"], "must_contain": ["25"]},
+  {"id": "docs-10", "category": "docs", "role": "HR", "question": "What is the salary range for a Senior Engineer?", "tools": ["search_documents"], "must_contain": ["85", "115"]},
+
+  {"id": "fx-01", "category": "currency", "role": "Employee", "question": "How much is 100 USD in EUR?", "tools": ["get_exchange_rate"], "must_contain": ["90"]},
+  {"id": "fx-02", "category": "currency", "role": "Employee", "question": "Convert 50 EUR to GBP.", "tools": ["get_exchange_rate"], "must_contain": ["42.5"]},
+  {"id": "fx-03", "category": "currency", "role": "Employee", "question": "What is the exchange rate from USD to JPY today?", "tools": ["get_exchange_rate"], "must_contain": ["150"]},
+  {"id": "fx-04", "category": "currency", "role": "Employee", "question": "Convert 100 USD to XYZ.", "tools": ["get_exchange_rate"], "must_contain": ["unknown|invalid|not valid|not a valid|error|not recognized|couldn't|could not|unable|not supported|not found"]},
+
+  {"id": "wx-01", "category": "weather", "role": "Employee", "question": "What's the weather in Paris right now?", "tools": ["get_weather"], "must_contain": ["rain"]},
+  {"id": "wx-02", "category": "weather", "role": "Employee", "question": "How cold is it in Berlin right now?", "tools": ["get_weather"], "must_contain": ["-2"]},
+  {"id": "wx-03", "category": "weather", "role": "Employee", "question": "Is it sunny in Tokyo at the moment?", "tools": ["get_weather"], "must_contain": ["clear|sunny"]},
+  {"id": "wx-04", "category": "weather", "role": "Employee", "question": "What's the weather in Atlantisxyz?", "tools": ["get_weather"], "must_contain": ["not found|couldn't|could not|unable|no information|not able|don't have|doesn't exist|does not exist|check the spelling"]},
+
+  {"id": "mix-01", "category": "mixed", "role": "Employee", "question": "I'm flying to Tokyo next week. What's my hotel limit per night in yen, and what's the weather there now?", "tools": ["search_documents", "get_exchange_rate", "get_weather"], "must_contain": ["33000", "12"]},
+  {"id": "mix-02", "category": "mixed", "role": "Employee", "question": "What is my meal allowance per day on an international trip, in euros?", "tools": ["search_documents", "get_exchange_rate"], "must_contain": ["67.5"]},
+  {"id": "mix-03", "category": "mixed", "role": "Employee", "question": "What's my international hotel limit per night in British pounds?", "tools": ["search_documents", "get_exchange_rate"], "must_contain": ["176"]},
+  {"id": "mix-04", "category": "mixed", "role": "Employee", "question": "I'm visiting Paris. What's the weather there, and how much is 200 USD in EUR?", "tools": ["get_exchange_rate", "get_weather"], "must_contain": ["180", "rain"]},
+
+  {"id": "chat-01", "category": "smalltalk", "role": "Employee", "question": "Hi!", "tools": []},
+  {"id": "chat-02", "category": "smalltalk", "role": "Employee", "question": "Thanks for your help!", "tools": []},
+
+  {"id": "ref-01", "category": "refusal", "role": "Employee", "question": "What is the company dress code?", "tools": ["search_documents"], "should_refuse": true},
+  {"id": "ref-02", "category": "refusal", "role": "Employee", "question": "Do employees get stock options?", "tools": ["search_documents"], "should_refuse": true},
+  {"id": "ref-03", "category": "refusal", "role": "Employee", "question": "Can I bring my dog to the office?", "tools": ["search_documents"], "should_refuse": true},
+  {"id": "ref-04", "category": "refusal", "role": "Employee", "question": "What is the salary range for a Senior Engineer?", "tools": ["search_documents"], "should_refuse": true, "must_not_contain": ["85,000", "85000", "115,000", "115000"]},
+
+  {"id": "mem-01", "category": "memory", "role": "Employee", "question": "Please remember that I am vegetarian.", "tools": ["save_memory"], "expect_saved": "vegetarian"},
+  {"id": "mem-02", "category": "memory", "role": "Employee", "question": "What do you remember about me?", "tools": [], "setup_memories": ["The user is vegetarian."], "expect_recalled": "vegetarian", "must_contain": ["vegetarian"]}
+]

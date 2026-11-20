@@ -150,6 +150,30 @@ def test_conversion_waits_for_policy_search(fake_tools):
     assert any(m["role"] == "user" and m["content"] == agent.NUDGE for m in messages)
 
 
+def test_tool_error_is_not_turned_into_no_documents(fake_tools):
+    # Found by the evaluation (fx-04): a currency error answered with the "no documents" phrase
+    fake_tools["get_exchange_rate"].return_value = {"error": "Unknown currency code 'USD' or 'XYZ'."}
+    script = [tool_call("get_exchange_rate", from_currency="USD", to_currency="XYZ", amount=100),
+              final("I don't know based on the company documents.")]
+    with patch("agent.chat", side_effect=script):
+        result = agent.run_agent("100 USD to XYZ?", "Employee")
+    assert result["answer"] == "Sorry, I couldn't get that: Unknown currency code 'USD' or 'XYZ'."
+
+
+def test_described_but_not_called_tool_gets_nudged(fake_tools):
+    # Found by the evaluation (mix-03): the model WROTE "I'll call get_exchange_rate" instead of calling it
+    script = [tool_call("search_documents", query="hotel limit international"),
+              final("The limit is 220 USD. I'll need to call get_exchange_rate with 220."),
+              tool_call("get_exchange_rate", from_currency="USD", to_currency="GBP", amount=220),
+              final("That is £176 per night.")]
+    with patch("agent.chat", side_effect=script) as fake_llm:
+        result = agent.run_agent("Hotel limit in pounds?", "Employee")
+    assert result["answer"] == "That is £176 per night."
+    fake_tools["get_exchange_rate"].assert_called_once()
+    messages = fake_llm.call_args_list[-1].args[0]
+    assert any(m["role"] == "user" and "Call get_exchange_rate now" in m["content"] for m in messages)
+
+
 def test_llm_down():
     with patch("agent.chat", side_effect=requests.ConnectionError):
         result = agent.run_agent("Hi", "Employee")
